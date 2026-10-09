@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Model 3 Home</title>
+<style>
+/* Built for the Model 3 Intel Atom browser: system fonts only, no frameworks, no blur or shadows,
+   big touch targets. Layout: clock/weather strip on top, launch tiles + charging calculator + notes below. */
+:root {
+  --bg: #f2f3f5; --panel: #ffffff; --ink: #15191e; --muted: #5d6670; --line: #d9dde2;
+  --accent: #2563c9; --accent-ink: #ffffff; --soft: #e8edf5;
+  --ok: #1d7a46; --warn: #a65b00;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+:root[data-theme="dark"] {
+  --bg: #0f1215; --panel: #191d22; --ink: #e9ecef; --muted: #96a0aa; --line: #2a3038;
+  --accent: #5b9bff; --accent-ink: #0b1220; --soft: #1f2a38;
+  --ok: #5cc98a; --warn: #f0a94a;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --panel: #191d22; --ink: #e9ecef; --muted: #96a0aa; --line: #2a3038;
+    --accent: #5b9bff; --accent-ink: #0b1220; --soft: #1f2a38;
+    --ok: #5cc98a; --warn: #f0a94a;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 18px; line-height: 1.4; -webkit-tap-highlight-color: transparent; }
+.page { max-width: 1400px; margin: 0 auto; padding: 20px 20px 40px; display: grid; gap: 18px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+.label { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Top strip */
+.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); gap: 18px; }
+.clock { display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+.time { font-size: 76px; font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.time small { font-size: 28px; font-weight: 400; margin-left: 6px; color: var(--muted); }
+.date { font-size: 20px; color: var(--muted); }
+.greet { font-size: 22px; font-weight: 600; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { min-height: 52px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); font-weight: 600; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+.wx { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px 24px; align-items: center; }
+.wx-now { display: grid; gap: 4px; }
+.wx-temp { font-size: 64px; font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; }
+.wx-desc { font-size: 20px; font-weight: 600; }
+.wx-meta { color: var(--muted); font-size: 16px; }
+.hours { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.hour { background: var(--soft); border-radius: 10px; padding: 10px 6px; text-align: center; display: grid; gap: 2px; }
+.hour b { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hour span { font-size: 14px; color: var(--muted); }
+.hour .rain { color: var(--accent); font-weight: 600; }
+.tip { grid-column: 1 / -1; font-size: 16px; padding: 10px 14px; border-radius: 10px; background: var(--soft); }
+.wx-empty { grid-column: 1 / -1; color: var(--muted); }
+
+/* Main grid */
+.main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.side { display: grid; gap: 18px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.tile { display: flex; align-items: center; gap: 12px; min-height: 76px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 18px; min-width: 0; }
+.tile:active { background: var(--soft); }
+.mono { flex: none; width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 20px; }
+.tile span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Charging calculator */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+.seg button { min-height: 50px; border: 0; border-radius: 9px; background: transparent; font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.slider { display: grid; gap: 4px; margin-bottom: 14px; }
+.slider-head { display: flex; justify-content: space-between; font-weight: 600; }
+.slider-head output { font-variant-numeric: tabular-nums; }
+input[type=range] { width: 100%; height: 40px; accent-color: var(--accent); }
+.results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.res { background: var(--soft); border-radius: 10px; padding: 12px; }
+.res span { display: block; font-size: 13px; color: var(--muted); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.res b { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fine { font-size: 14px; color: var(--muted); margin: 12px 0 0; }
+
+textarea.notes { width: 100%; min-height: 150px; resize: vertical; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--bg); font-size: 18px; }
+.phase2 { color: var(--muted); font-size: 16px; }
+
+/* Settings */
+dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--ink); width: min(720px, calc(100vw - 32px)); padding: 0; }
+dialog::backdrop { background: rgba(0,0,0,.5); }
+.dlg { padding: 20px; display: grid; gap: 16px; max-height: calc(100vh - 80px); overflow: auto; }
+.dlg h2 { margin: 0; font-size: 24px; }
+.field { display: grid; gap: 6px; }
+.field label { font-weight: 600; }
+.field input, .field textarea, .field select { min-height: 50px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); width: 100%; }
+.field textarea { min-height: 200px; font-family: var(--mono); font-size: 15px; }
+.field small { color: var(--muted); font-size: 14px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.msg { font-size: 15px; min-height: 1.4em; }
+
+@media (max-width: 900px) {
+  .top, .main { grid-template-columns: minmax(0, 1fr); }
+  .time { font-size: 60px; }
+}
+@media (max-width: 560px) {
+  .page { padding: 16px 16px 32px; }
+  .wx { grid-template-columns: minmax(0, 1fr); }
+  .hours { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .two { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <section class="card clock">
+      <div>
+        <div class="greet" id="greet">Good morning</div>
+        <div class="time" id="time">--:--</div>
+        <div class="date" id="date"></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="themeBtn" type="button">Theme: Auto</button>
+        <button class="btn" id="settingsBtn" type="button">Settings</button>
+      </div>
+    </section>
+    <section class="card wx" id="wx" aria-live="polite">
+      <div class="wx-empty">Loading weather…</div>
+    </section>
+  </div>
+
+  <div class="main">
+    <div class="side">
+      <section class="card">
+        <h2 class="label">Launch</h2>
+        <div class="tiles" id="tiles"></div>
+      </section>
+
+      <section class="card">
+        <h2 class="label"><label for="notes">Notes</label></h2>
+        <textarea class="notes" id="notes" placeholder="Parking spot, errands, things to remember…"></textarea>
+      </section>
+    </div>
+
+    <div class="side">
+      <section class="card">
+        <h2 class="label">Charging estimate</h2>
+        <div class="seg" role="group" aria-label="Charger type">
+          <button type="button" id="modeHome" aria-pressed="true">Home (Level 2)</button>
+          <button type="button" id="modeSc" aria-pressed="false">Supercharger</button>
+        </div>
+        <div class="slider">
+          <div class="slider-head"><label for="socNow">Battery now</label><output id="socNowOut">20%</output></div>
+          <input type="range" id="socNow" min="0" max="99" step="1" value="20">
+        </div>
+        <div class="slider">
+          <div class="slider-head"><label for="socTo">Charge to</label><output id="socToOut">80%</output></div>
+          <input type="range" id="socTo" min="1" max="100" step="1" value="80">
+        </div>
+        <div class="results">
+          <div class="res"><span>Cost</span><b id="rCost">–</b></div>
+          <div class="res"><span>Time</span><b id="rTime">–</b></div>
+          <div class="res"><span>Range added</span><b id="rMiles">–</b></div>
+          <div class="res"><span>Energy</span><b id="rKwh">–</b></div>
+        </div>
+        <p class="fine" id="rNote"></p>
+      </section>
+
+      <section class="card">
+        <h2 class="label">Car status</h2>
+        <p class="phase2" style="margin:0">Live battery, range, climate and lock status will show here once the Tesla Fleet API is connected.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form class="dlg" id="form" method="dialog">
+    <h2>Settings</h2>
+    <div class="two">
+      <div class="field">
+        <label for="sName">Your name</label>
+        <input id="sName" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="sCity">Weather location</label>
+        <input id="sCity" placeholder="City, e.g. Seattle" autocomplete="off">
+        <small id="sCityNow">Leave blank to use the car's location.</small>
+      </div>
+    </div>
+    <div class="field">
+      <label for="sLinks">Launch tiles</label>
+      <textarea id="sLinks" spellcheck="false"></textarea>
+      <small>One per line: Name | https://address</small>
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="sHome">Home electricity ($/kWh)</label>
+        <input id="sHome" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="sSc">Supercharger ($/kWh)</label>
+        <input id="sSc" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="sKw">Home charger power (kW)</label>
+        <input id="sKw" inputmode="decimal">
+        <small>11.5 kW max for this car (48 A wall connector).</small>
+      </div>
+      <div class="field">
+        <label for="sEff">Efficiency (Wh/mi)</label>
+        <input id="sEff" inputmode="decimal">
+        <small>Check Controls → Energy (Consumption tab).</small>
+      </div>
+      <div class="field">
+        <label for="sPack">Usable battery (kWh)</label>
+        <input id="sPack" inputmode="decimal">
+      </div>
+    </div>
+    <div class="msg" id="sMsg" role="status"></div>
+    <div class="toolbar">
+      <button class="btn primary" id="saveBtn" type="button">Save</button>
+      <button class="btn" value="cancel">Cancel</button>
+      <button class="btn" id="resetBtn" type="button">Reset to defaults</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "m3home.v1";
+  var DEFAULTS = {
+    name: "",
+    city: null, // {name, lat, lon}
+    theme: "auto",
+    links: [
+      ["YouTube", "https://www.youtube.com"],
+      ["Netflix", "https://www.netflix.com"],
+      ["Disney+", "https://www.disneyplus.com"],
+      ["Twitch", "https://www.twitch.tv"],
+      ["Plex", "https://app.plex.tv"],
+      ["YouTube Music", "https://music.youtube.com"],
+      ["ABRP", "https://abetterrouteplanner.com"],
+      ["PlugShare", "https://www.plugshare.com"],
+      ["Google", "https://www.google.com"],
+      ["Reddit", "https://www.reddit.com/r/TeslaModel3"]
+    ],
+    // 2021 Model 3 Performance: ~76 kWh usable, 11.5 kW onboard AC charger, 250 kW V3 Supercharging
+    homePrice: 0.17, scPrice: 0.45, homeKw: 11.5, eff: 250, pack: 76,
+    mode: "home", socNow: 20, socTo: 80,
+    notes: ""
+  };
+
+  function load() {
+    var s = {};
+    try { s = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
+    var out = {};
+    for (var k in DEFAULTS) out[k] = s[k] !== undefined ? s[k] : DEFAULTS[k];
+    return out;
+  }
+  var S = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  function $(id) { return document.getElementById(id); }
+
+  // ---------- Theme ----------
+  function applyTheme() {
+    if (S.theme === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", S.theme);
+    $("themeBtn").textContent = "Theme: " + S.theme.charAt(0).toUpperCase() + S.theme.slice(1);
+  }
+  $("themeBtn").addEventListener("click", function () {
+    S.theme = { auto: "dark", dark: "light", light: "auto" }[S.theme] || "auto";
+    save(); applyTheme();
+  });
+
+  // ---------- Clock ----------
+  var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function tick() {
+    var d = new Date(), h = d.getHours(), m = d.getMinutes();
+    var h12 = h % 12 || 12;
+    $("time").innerHTML = h12 + ":" + (m < 10 ? "0" : "") + m + "<small>" + (h < 12 ? "am" : "pm") + "</small>";
+    $("date").textContent = DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + d.getDate();
+    var part = h < 5 ? "Good evening" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+    $("greet").textContent = part + (S.name ? ", " + S.name : "");
+  }
+  tick();
+  setInterval(tick, 10000);
+
+  // ---------- Launch tiles ----------
+  var PALETTE = ["#c2412d", "#2563c9", "#1d7a46", "#7a3fc4", "#b5651d", "#0f7c8c", "#a8325e", "#4a5a6b"];
+  function hash(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
+  function renderTiles() {
+    var box = $("tiles");
+    box.textContent = "";
+    S.links.forEach(function (l) {
+      var a = document.createElement("a");
+      a.className = "tile"; a.href = l[1];
+      var mono = document.createElement("span");
+      mono.className = "mono"; mono.style.background = PALETTE[hash(l[0]) % PALETTE.length];
+      mono.textContent = l[0].trim().charAt(0).toUpperCase();
+      var name = document.createElement("span");
+      name.textContent = l[0];
+      a.appendChild(mono); a.appendChild(name);
+      box.appendChild(a);
+    });
+  }
+  renderTiles();
+
+  // ---------- Weather (Open-Meteo, no API key) ----------
+  var WMO = {
+    0: "Clear", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Freezing fog",
+    51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle", 56: "Freezing drizzle", 57: "Freezing drizzle",
+    61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain", 67: "Freezing rain",
+    71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains",
+    80: "Showers", 81: "Showers", 82: "Heavy showers", 85: "Snow showers", 86: "Snow showers",
+    95: "Thunderstorm", 96: "Thunderstorm, hail", 99: "Thunderstorm, hail"
+  };
+  function wxMessage(text) { $("wx").innerHTML = ""; var d = document.createElement("div"); d.className = "wx-empty"; d.textContent = text; $("wx").appendChild(d); }
+
+  function getCoords(cb) {
+    if (S.city) return cb(S.city);
+    if (!navigator.geolocation) return cb(null);
+    var done = false;
+    var timer = setTimeout(function () { if (!done) { done = true; cb(null); } }, 8000);
+    navigator.geolocation.getCurrentPosition(function (p) {
+      if (done) return; done = true; clearTimeout(timer);
+      cb({ name: "Current location", lat: p.coords.latitude, lon: p.coords.longitude });
+    }, function () { if (done) return; done = true; clearTimeout(timer); cb(null); }, { timeout: 7000, maximumAge: 600000 });
+  }
+
+  function loadWeather() {
+    getCoords(function (c) {
+      if (!c) { wxMessage("Weather needs a location. Open Settings and enter your city."); return; }
+      var url = "https://api.open-meteo.com/v1/forecast?latitude=" + c.lat.toFixed(3) + "&longitude=" + c.lon.toFixed(3) +
+        "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m" +
+        "&hourly=temperature_2m,precipitation_probability,weather_code" +
+        "&daily=temperature_2m_max,temperature_2m_min,sunset" +
+        "&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=2";
+      fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (d) { renderWeather(d, c); try { localStorage.setItem(KEY + ".wx", JSON.stringify({ d: d, c: c, t: Date.now() })); } catch (e) {} })
+        .catch(function () {
+          var cached = null;
+          try { cached = JSON.parse(localStorage.getItem(KEY + ".wx")); } catch (e) {}
+          if (cached) renderWeather(cached.d, cached.c, cached.t);
+          else wxMessage("Couldn't reach the weather service. Check the car's connection.");
+        });
+    });
+  }
+
+  function fmtHour(iso) { var h = +iso.slice(11, 13); return (h % 12 || 12) + (h < 12 ? "a" : "p"); }
+
+  function renderWeather(d, c, staleAt) {
+    var cur = d.current, box = $("wx");
+    box.innerHTML = "";
+    var now = document.createElement("div"); now.className = "wx-now";
+    var t = Math.round(cur.temperature_2m);
+    now.innerHTML = '<div class="wx-temp">' + t + '°</div>';
+    var desc = document.createElement("div"); desc.className = "wx-desc"; desc.textContent = WMO[cur.weather_code] || "—";
+    var meta = document.createElement("div"); meta.className = "wx-meta";
+    meta.textContent = "H " + Math.round(d.daily.temperature_2m_max[0]) + "° · L " + Math.round(d.daily.temperature_2m_min[0]) +
+      "° · Feels " + Math.round(cur.apparent_temperature) + "° · Wind " + Math.round(cur.wind_speed_10m) + " mph";
+    var where = document.createElement("div"); where.className = "wx-meta";
+    where.textContent = c.name + (staleAt ? " · saved " + new Date(staleAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "");
+    now.appendChild(desc); now.appendChild(meta); now.appendChild(where);
+    box.appendChild(now);
+
+    // Next 6 hours, starting at the current local hour
+    var hours = document.createElement("div"); hours.className = "hours";
+    var start = d.hourly.time.indexOf(cur.time.slice(0, 13) + ":00");
+    if (start < 0) start = 0;
+    var maxRain = 0;
+    for (var i = start + 1; i <= start + 6 && i < d.hourly.time.length; i++) {
+      var p = d.hourly.precipitation_probability[i] || 0;
+      maxRain = Math.max(maxRain, p);
+      var el = document.createElement("div"); el.className = "hour";
+      el.innerHTML = "<span>" + fmtHour(d.hourly.time[i]) + "</span><b>" + Math.round(d.hourly.temperature_2m[i]) + "°</b>" +
+        '<span class="' + (p >= 30 ? "rain" : "") + '">' + p + "%</span>";
+      hours.appendChild(el);
+    }
+    box.appendChild(hours);
+
+    // Car-relevant tip
+    var tip = null;
+    if (t <= 40) tip = "Cold out. Precondition the battery before driving (Climate → Defrost, or Schedule) so regen and acceleration aren't limited.";
+    else if (t >= 90) tip = "Hot out. Cabin Overheat Protection keeps the interior cooler while parked.";
+    else if (maxRain >= 50) tip = "Rain likely in the next few hours. Wet roads cut grip, so go easy on the Performance launch.";
+    if (tip) { var tp = document.createElement("div"); tp.className = "tip"; tp.textContent = tip; box.appendChild(tp); }
+  }
+
+  loadWeather();
+  setInterval(loadWeather, 15 * 60 * 1000);
+
+  // ---------- Charging estimate ----------
+  // Supercharger power curve for a 2021 Model 3 LR/Performance on V3 (rough, kW by state of charge).
+  function scPower(soc) {
+    if (soc < 10) return 200;
+    if (soc < 30) return 245;
+    if (soc < 50) return 245 - (soc - 30) * 3.5;   // 245 → 175
+    if (soc < 70) return 175 - (soc - 50) * 3;     // 175 → 115
+    if (soc < 80) return 115 - (soc - 70) * 5;     // 115 → 65
+    if (soc < 90) return 65 - (soc - 80) * 3;      // 65 → 35
+    return Math.max(12, 35 - (soc - 90) * 2.3);    // 35 → 12
+  }
+  function fmtTime(min) {
+    if (min < 1) return "<1 min";
+    var h = Math.floor(min / 60), m = Math.round(min % 60);
+    if (m === 60) { h++; m = 0; }
+    return h ? h + "h " + m + "m" : m + " min";
+  }
+  function calc() {
+    var a = S.socNow, b = S.socTo;
+    $("socNowOut").textContent = a + "%";
+    $("socToOut").textContent = b + "%";
+    $("modeHome").setAttribute("aria-pressed", String(S.mode === "home"));
+    $("modeSc").setAttribute("aria-pressed", String(S.mode === "sc"));
+    if (b <= a) {
+      ["rCost", "rTime", "rMiles", "rKwh"].forEach(function (id) { $(id).textContent = "–"; });
+      $("rNote").textContent = "Set “Charge to” above your current battery level.";
+      return;
+    }
+    var kwh = S.pack * (b - a) / 100;
+    var home = S.mode === "home";
+    var loss = home ? 0.10 : 0.05;          // energy lost between the plug and the battery
+    var billed = kwh / (1 - loss);
+    var minutes = 0;
+    if (home) minutes = billed / S.homeKw * 60;
+    else for (var s = a; s < b; s++) minutes += (S.pack / 100) / scPower(s) * 60;
+    var cost = billed * (home ? S.homePrice : S.scPrice);
+    var miles = kwh * 1000 / S.eff;
+    $("rCost").textContent = "$" + cost.toFixed(2);
+    $("rTime").textContent = fmtTime(minutes);
+    $("rMiles").textContent = Math.round(miles) + " mi";
+    $("rKwh").textContent = kwh.toFixed(1) + " kWh";
+    $("rNote").textContent = "About " + (cost / miles * 100).toFixed(1) + "¢ per mile. Estimate at $" + (home ? S.homePrice : S.scPrice).toFixed(2) +
+      "/kWh" + (home ? ", " + S.homeKw + " kW" : ", V3 Supercharger, warm battery") + ". Change prices in Settings.";
+  }
+  $("socNow").value = S.socNow; $("socTo").value = S.socTo;
+  $("socNow").addEventListener("input", function () { S.socNow = +this.value; calc(); });
+  $("socTo").addEventListener("input", function () { S.socTo = +this.value; calc(); });
+  $("socNow").addEventListener("change", save);
+  $("socTo").addEventListener("change", save);
+  $("modeHome").addEventListener("click", function () { S.mode = "home"; save(); calc(); });
+  $("modeSc").addEventListener("click", function () { S.mode = "sc"; save(); calc(); });
+  calc();
+
+  // ---------- Notes ----------
+  var notesTimer = 0;
+  $("notes").value = S.notes;
+  $("notes").addEventListener("input", function () {
+    S.notes = this.value;
+    clearTimeout(notesTimer); notesTimer = setTimeout(save, 400);
+  });
+
+  // ---------- Settings ----------
+  var dlg = $("dlg");
+  function openSettings() {
+    $("sName").value = S.name;
+    $("sCity").value = S.city ? S.city.name : "";
+    $("sCityNow").textContent = S.city ? "Using " + S.city.name + ". Clear it to use the car's location." : "Leave blank to use the car's location.";
+    $("sLinks").value = S.links.map(function (l) { return l[0] + " | " + l[1]; }).join("\n");
+    $("sHome").value = S.homePrice; $("sSc").value = S.scPrice; $("sKw").value = S.homeKw;
+    $("sEff").value = S.eff; $("sPack").value = S.pack;
+    $("sMsg").textContent = "";
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  }
+  function closeSettings() { if (dlg.close) dlg.close(); else dlg.removeAttribute("open"); }
+  $("settingsBtn").addEventListener("click", openSettings);
+
+  function num(id, lo, hi, fallback) {
+    var v = parseFloat($(id).value);
+    return isFinite(v) && v >= lo && v <= hi ? v : fallback;
+  }
+
+  $("saveBtn").addEventListener("click", function () {
+    var links = $("sLinks").value.split("\n").map(function (line) {
+      var parts = line.split("|");
+      if (parts.length < 2) return null;
+      var name = parts[0].trim(), url = parts.slice(1).join("|").trim();
+      if (!name || !url) return null;
+      if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+      return [name, url];
+    }).filter(Boolean);
+    S.name = $("sName").value.trim();
+    S.links = links.length ? links : DEFAULTS.links;
+    S.homePrice = num("sHome", 0, 5, S.homePrice);
+    S.scPrice = num("sSc", 0, 5, S.scPrice);
+    S.homeKw = num("sKw", 1, 19.2, S.homeKw);
+    S.eff = num("sEff", 150, 600, S.eff);
+    S.pack = num("sPack", 40, 100, S.pack);
+
+    var city = $("sCity").value.trim();
+    var finish = function () { save(); renderTiles(); tick(); calc(); loadWeather(); closeSettings(); };
+    if (!city) { S.city = null; finish(); return; }
+    if (S.city && S.city.name === city) { finish(); return; }
+    $("sMsg").textContent = "Looking up " + city + "…";
+    fetch("https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&name=" + encodeURIComponent(city.split(",")[0]))
+      .then(function (r) { return r.json(); })
+      .then(function (g) {
+        var r = g.results && g.results[0];
+        if (!r) { $("sMsg").textContent = "Couldn't find “" + city + "”. Try just the city name."; return; }
+        S.city = { name: r.name + (r.admin1 ? ", " + r.admin1 : ""), lat: r.latitude, lon: r.longitude };
+        finish();
+      })
+      .catch(function () { $("sMsg").textContent = "Couldn't reach the location service. Check the connection and try again."; });
+  });
+
+  $("resetBtn").addEventListener("click", function () {
+    var notes = S.notes;
+    S = JSON.parse(JSON.stringify(DEFAULTS)); S.notes = notes;
+    save(); applyTheme(); renderTiles(); tick(); calc(); loadWeather();
+    $("socNow").value = S.socNow; $("socTo").value = S.socTo;
+    closeSettings();
+  });
+
+  applyTheme();
+})();
+</script>
+</body>
+</html>
